@@ -31,7 +31,6 @@ import xacro
 
 def generate_launch_description():
 
-
     xacro_file = os.path.join(get_package_share_directory('dolly_description'), 'models/', 'dolly.xacro')
     assert os.path.exists(xacro_file), "The dolly.xacro doesnt exist in "+str(xacro_file)
 
@@ -67,6 +66,16 @@ def generate_launch_description():
         condition=IfCondition(LaunchConfiguration('rviz'))
     )
 
+    spawn_dolly = Node(package='dolly_description', executable='spawn_dolly.py', arguments=[robot_desc], output='screen')
+
+    dolly_state_publisher = Node(
+            package="robot_state_publisher",
+            executable="robot_state_publisher",
+            name="robot_state_publisher",
+            parameters=[
+                {"robot_description": robot_desc}],
+            output="screen"),
+
     return LaunchDescription([
         DeclareLaunchArgument(
           'world',
@@ -76,5 +85,6 @@ def generate_launch_description():
                               description='Open RViz.'),
         gazebo,
         follow,
-        rviz
+        spawn_dolly
+        #  rviz
     ])
