@@ -4,13 +4,13 @@
   <xacro:arg name="sim_gazebo_classic" default="$(optenv SIM_GAZEBO_CLASSIC)" />
   <xacro:arg name="sim_ignition" default="$(optenv SIM_IGNITION)" />
 
-  <link name='chassis'>
+  <link name="chassis">
     <inertial>
       <mass value="1"/>
       <origin rpy="0 0 0" xyz="0 0 0."/>
       <inertia ixx="0.0277" ixy="0" ixz="0" iyy="0.0852" iyz="0" izz="0.1041"/>
     </inertial>
-    <visual name='visual'>
+    <visual>
       <geometry>
           <box size="1.0 0.5 0.15"/>
       </geometry>
@@ -22,14 +22,40 @@
         </script>
       </material>
     </visual>
+  </link>
+
+  <link name="box">
+    <inertial>
+      <mass value="0"/>
+      <origin rpy="0 0 0" xyz="0 0 0."/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
     <visual name="box">
       <pose>0 0 0.08 0 0 0.24</pose>
       <geometry>
           <mesh filename="model://cardboard_box/meshes/cardboard_box.dae" scale="1.25931896 1.007455168 0.755591376" />
       </geometry>
     </visual>
+  </link>
 
-    <xacro:if value="$(arg sim_gazebo_classic)">
+  <joint name='box_joint' type='fixed'>
+    <origin xyz="0 0 0.08" rpy="0 0 24"/>
+    <parent link="chassis"/>
+    <child link="box"/>
+    <axis xyz="0 0 1" />
+  </joint>
+
+  <link name="laser_sensor"/>
+
+  <joint name='laser_sensor_joint' type='fixed'>
+    <origin xyz="0.5 0 0" rpy="0 0 0"/>
+    <parent link="chassis"/>
+    <child link="laser_sensor"/>
+    <axis xyz="0 0 1" />
+  </joint>
+
+  <xacro:if value="$(arg sim_gazebo_classic)">
+    <gazebo reference="laser_sensor">
       <sensor name="sensor_ray" type="ray">
         <pose>0.5 0 0 0 0 0</pose>
         <ray>
@@ -57,9 +83,11 @@
           <output_type>sensor_msgs/LaserScan</output_type>
         </plugin>
       </sensor>
-    </xacro:if>
+    </gazebo>
+  </xacro:if>
 
-    <xacro:if value="$(arg sim_ignition)">
+  <xacro:if value="$(arg sim_ignition)">
+    <gazebo reference="laser_sensor">
       <sensor name="sensor_ray" type="gpu_lidar">
         <pose>0.5 0 0 0 0 0</pose>
         <topic>/dolly/laser_scan</topic>
@@ -81,11 +109,11 @@
         <visualize>true</visualize>
         <update_rate>100.0</update_rate>
       </sensor>
-    </xacro:if>
+    </gazebo>
+  </xacro:if>
 
-  </link>
+
   <link name='caster'>
-    <pose>-0.3 0 -0.125 0 0 0</pose>
     <inertial>
       <mass value= "0.0415553"/>
       <inertia ixx="7.97741e-05" ixy="0" ixz="0" iyy="7.97741e-05" iyz="0" izz="7.97741e-05"/>
@@ -129,7 +157,6 @@
   </link>
 
   <link name='left_wheel'>
-    <pose>0.3 0.3 -0.075 -1.5707 0 0</pose>
     <inertial>
       <mass value= "0.5"/>
       <inertia ixx="0.0029" ixy="0" ixz="0" iyy="0.0029" iyz="0" izz="0.0056" />
@@ -147,7 +174,7 @@
     </visual>
     <collision name='collision'>
       <geometry>
-        <sphere radius="0.1"/>
+        <cylinder radius="0.15" length="0.05"/>
       </geometry>
       <surface>
         <friction>
@@ -191,7 +218,7 @@
     </visual>
     <collision name='collision'>
       <geometry>
-        <sphere radius="0.1"/>
+        <cylinder radius="0.15" length="0.05"/>
       </geometry>
       <surface>
         <friction>
@@ -217,7 +244,6 @@
   </link>
 
   <link name='tail'>
-    <pose>-0.52 0 0 -1.6 0 0</pose>
     <inertial>
       <mass value="0.0254232" />
       <inertia ixx="1.528e-05" ixy="0" ixz="0" iyy="1.528e-05" iyz="0" izz="3.45e-06" />
@@ -238,24 +264,23 @@
   </link>
 
   <joint name='left_wheel_joint' type='revolute'>
+    <origin xyz="0.3 0.3 -0.075" rpy="-1.5707 0 0"/>
     <parent link="chassis"/>
     <child link="left_wheel"/>
     <limit effort="10" velocity="10"/>
-    <axis>
-      <xyz>0 0 1</xyz>
-    </axis>
+    <axis xyz="0 0 1" />
   </joint>
 
   <joint name='right_wheel_joint' type='revolute'>
+    <origin xyz="0.3 -0.3 -0.075" rpy="-1.5707 0 0"/>
     <parent link="chassis"/>
     <child link="right_wheel"/>
     <limit effort="10" velocity="10"/>
-    <axis>
-      <xyz>0 0 1</xyz>
-    </axis>
+    <axis xyz="0 0 1" />
   </joint>
 
   <joint name='caster_wheel' type='fixed'>
+    <origin xyz="-0.3 0 -0.125" rpy="0 0 0"/>
     <parent link="chassis"/>
     <child link="caster"/>
   </joint>
@@ -263,7 +288,7 @@
   <joint name='tail_joint' type='revolute'>
     <parent link="chassis"/>
     <child link="tail"/>
-    <pose>0 0 0.04 0 -0 0</pose>
+    <origin xyz="-0.52 0 0.04" rpy="-1.6 0 0"/>
     <limit lower="-1.79769e+308" upper="1.79769e+308" effort="-1" velocity="-1" />
     <axis>
       <xyz>1 0 0</xyz>
@@ -339,6 +364,16 @@
       </plugin>
     </gazebo>
   </xacro:if>
+
+  <gazebo reference="chassis">
+    <material>
+      <script>
+        <uri>model://dolly/materials/scripts</uri>
+        <uri>model://dolly/materials/textures</uri>
+        <name>aruco_tag_0</name>
+      </script>
+    </material>
+  </gazebo>
 
 
 </robot>
